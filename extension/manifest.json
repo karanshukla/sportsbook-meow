@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "sportsbook-meow",
+  "version": "1.0.0",
+  "description": "Replaces sportsbook betting ads in sports video with cats in real time.",
+  "permissions": ["storage"],
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["cats/*.jpg", "cats/*.png", "cats/*.jpeg"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

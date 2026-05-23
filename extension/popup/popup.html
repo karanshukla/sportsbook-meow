@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>sportsbook-meow</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <span class="logo">🐱</span>
+    <h1>sportsbook-meow</h1>
+  </header>
+
+  <section class="status-row">
+    <span class="dot" id="dot"></span>
+    <span id="status-text">Connecting…</span>
+  </section>
+
+  <section class="toggle-row">
+    <label class="switch">
+      <input type="checkbox" id="toggle" checked />
+      <span class="slider"></span>
+    </label>
+    <span id="toggle-label">Cats enabled</span>
+  </section>
+
+  <section class="server-row">
+    <label for="server-url">Server URL</label>
+    <input type="text" id="server-url" placeholder="ws://localhost:8765" spellcheck="false" />
+    <button id="save-btn">Save</button>
+  </section>
+
+  <footer>
+    Ads replaced this session: <strong id="count">—</strong>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
