@@ -21,16 +21,18 @@ def download_cats(output_dir: str, count: int, api_key: str = "") -> None:
             "https://api.thecatapi.com/v1/images/search?mime_types=jpg,png&size=med",
             headers=headers,
         )
-        with urllib.request.urlopen(req, timeout=10) as r:
+        with urllib.request.urlopen(req, timeout=10) as r:  # nosec B310 — hardcoded https URL
             data = json.loads(r.read())[0]
 
         url = data["url"]
+        if not url.startswith("https://"):
+            raise ValueError(f"Unexpected URL scheme from Cat API: {url!r}")
         ext = url.rsplit(".", 1)[-1].split("?")[0]
         dest = out / f"cat_{saved + 1:03d}.{ext}"
 
         print(f"[{saved + 1}/{count}] {url}")
         img_req = urllib.request.Request(url, headers={"User-Agent": "sportsbook-meow/1.0"})
-        with urllib.request.urlopen(img_req, timeout=15) as resp, open(dest, "wb") as f:
+        with urllib.request.urlopen(img_req, timeout=15) as resp, open(dest, "wb") as f:  # nosec B310 — scheme validated above
             f.write(resp.read())
         saved += 1
 
