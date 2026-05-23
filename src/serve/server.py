@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 # ── globals ──────────────────────────────────────────────────────────────────
 
 _model: YOLO | None = None
-#adjust if youre seeing false positives
+# adjust if youre seeing false positives
 _conf: float = 0.5
 # Thread pool for JPEG decode + YOLO (YOLO releases the GIL for GPU work).
 # One worker per GPU is enough; extra threads handle concurrent decode on the

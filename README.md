@@ -4,7 +4,7 @@ Real-time replacement of sportsbook betting ads in sports video — local files 
 
 > **Pre-trained weights** — download `best.pt` from the [latest GitHub Release](../../releases/latest) to skip training entirely.
 
-> **Disclaimer** — For personal use only. Not affiliated with any sportsbook brand. Model weights are learned parameters for the purpose of ad detection and replacement; no third-party brand assets are distributed with this project. This project MAY NOT work with DRM enabled Streams (Widevine). This application is only for research, educational or private use. This application does NOT block ads via host file manipulation. Running ML inferencing locally is demanding, so you may run into bugs, lag or freezes with your system, depending on your hardware.
+> **Disclaimer** — For personal use only. Not affiliated with any sportsbook brand. Model weights are learned parameters for the purpose of ad detection and replacement; no third-party brand assets are distributed with this project. This project MAY NOT work with DRM enabled streams (Widevine). This application is only for research, educational or private use. This application does NOT block ads via host file manipulation. Running ML inferencing locally is demanding, so you may run into bugs, lag or freezes depending on your hardware.
 
 ---
 
@@ -40,13 +40,28 @@ Extension overlays cats on detected regions in real time
 | Cat image downloader (real photos, no AI) | ✅ Done |
 | Local WebSocket inference server | ✅ Done |
 | Browser extension (Chrome / Edge / Firefox) | ✅ Done |
+| One-click installer (WSL / Linux / macOS) | ✅ Done |
+| System-tray GUI | ✅ Done |
 | Real-time local video player | 🔲 Planned |
 
 ---
 
 ## Setup
 
-### Windows (WSL2) — recommended for NVIDIA GPU
+### Option A — one-click installer (recommended)
+
+Works on WSL2, Linux, and macOS. Installs Miniconda if needed, creates the `yolo` conda env, picks the right PyTorch backend for your hardware, and installs all dependencies.
+
+```bash
+git clone https://github.com/youruser/sportsbook-meow && cd sportsbook-meow
+./install.sh
+```
+
+On WSL2, ensure NVIDIA drivers are installed on the **Windows** side first (`nvidia-smi` should work inside WSL before running the installer).
+
+### Option B — manual setup
+
+#### Windows (WSL2)
 
 1. **Enable WSL2** (PowerShell as admin, then reboot):
    ```powershell
@@ -62,27 +77,20 @@ Extension overlays cats on detected regions in real time
 
 4. Continue with the Linux steps below inside WSL2.
 
-### Linux / WSL2
+#### Linux / WSL2
 
 ```bash
-# Install Miniconda if not already present
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash Miniconda3-latest-Linux-x86_64.sh && source ~/.bashrc
+conda create -n yolo python=3.11 -y && conda activate yolo
 
-conda create -n yolo python=3.11 -y
-conda activate yolo
-
-# Choose the right CUDA version for your GPU:
-#   RTX 5000 series (Blackwell, sm_120) → nightly cu128
-#   RTX 4000 / 3000 series             → stable cu121
-pip install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/cu128
+# RTX 5000 series (Blackwell) → cu126+
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 
 pip install -r requirements.txt
 ```
 
 Verify: `python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"`
 
-### macOS (CPU / Apple Silicon MPS)
+#### macOS (CPU / Apple Silicon MPS)
 
 ```bash
 conda create -n yolo python=3.11 -y && conda activate yolo
@@ -123,11 +131,23 @@ python src/infer/prepare_extension_cats.py
 
 ### 3. Start the inference server
 
+**System tray (recommended)** — a cat-face icon sits in your taskbar; click to start/stop the server and open logs:
+
 ```bash
-conda activate yolo
-python src/serve/server.py
-# GPU warms up, then listens on ws://localhost:8765
+./start-tray.sh   # or: make tray
 ```
+
+> WSL2 requires WSLg (ships with Windows 11; Windows 10 needs the WSL preview update). Without a desktop environment, use the shell launcher below instead.
+
+**Shell launcher:**
+
+```bash
+./start-server.sh              # default conf=0.5
+./start-server.sh --conf 0.35  # lower threshold if ads are being missed
+make server                    # shortcut
+```
+
+Server logs are written to `server.log` in the repo root. Use `tail -f server.log` to follow them.
 
 ### 4. Load the browser extension
 
@@ -136,7 +156,7 @@ python src/serve/server.py
 
 Click the 🐱 icon in your toolbar — the popup shows the server connection status and an on/off toggle.
 
-> **Chrome permission prompt** — the first time the extension tries to connect, Chrome will show a banner asking permission to access `localhost`. Click **Allow**. You only need to do this once. If you miss it, go to `chrome://extensions` → sportsbook-meow → **Site access** and allow localhost manually.
+> **Chrome permission prompt** — the first time the extension connects, Chrome will ask permission to access `localhost`. Click **Allow**. You only need to do this once. If you miss it, go to `chrome://extensions` → sportsbook-meow → **Site access** and allow localhost manually.
 
 ### 5. Watch sport, enjoy cats
 
@@ -144,11 +164,26 @@ Open any stream on YouTube, Twitch etc. Betting logos are replaced with random c
 
 ---
 
+## Make targets
+
+```bash
+make install        # set up conda env and dependencies (same as ./install.sh)
+make tray           # start the system-tray GUI
+make server         # start the inference server in the shell (conf=0.5)
+make server-debug   # start with lower conf threshold (conf=0.25)
+make train          # train from configs/train.yaml
+make train-resume   # resume interrupted training
+make extract-frames # extract frames from data/raw/ at 1 fps
+make lint           # ruff lint + format check
+```
+
+---
+
 ## Training your own model
 
 ### 1. Get the dataset
 
-Annotate your own frames using [LabelImg](https://github.com/HumanSignal/labelImg) or [Roboflow](https://roboflow.com) in YOLO format, one class: `logo`. Place images in `train/images/` and labels in `train/labels/`, then create a `valid/` split the same way.
+Annotate frames using [LabelImg](https://github.com/HumanSignal/labelImg) or [Roboflow](https://roboflow.com) in YOLO format, one class: `logo`. Place images in `train/images/` and labels in `train/labels/`, then create a `valid/` split the same way.
 
 To download a Roboflow dataset export (YOLOv8 format) and split it:
 
@@ -178,8 +213,8 @@ EOF
 ### 2. Train
 
 ```bash
-conda activate yolo
-python src/train/train.py --config configs/train.yaml
+make train
+# or: conda activate yolo && python src/train/train.py --config configs/train.yaml
 ```
 
 Weights are saved to `runs/detect/models/sportsbook_ads/weights/best.pt`. Training 100 epochs on an RTX 5070 takes roughly 2–3 hours.
@@ -188,7 +223,7 @@ Weights are saved to `runs/detect/models/sportsbook_ads/weights/best.pt`. Traini
 
 To resume an interrupted run:
 ```bash
-python src/train/train.py --config configs/train.yaml --resume
+make train-resume
 ```
 
 ### 3. Upload weights to GitHub Releases
@@ -227,9 +262,33 @@ python src/infer/detect.py match.mp4 --cat-dir ~/my-cats/
 
 ---
 
+## Code quality
+
+CI runs automatically on every push and pull request via GitHub Actions.
+
+```bash
+pip install -r requirements-dev.txt
+
+ruff check src/          # lint
+ruff format src/         # auto-format
+bandit -r src/ -c pyproject.toml   # security scan
+pip-audit -r requirements.txt      # dependency vulnerability check
+npm install && npm run lint        # ESLint on the browser extension
+```
+
+---
+
 ## Project structure
 
 ```
+├── install.sh                             # One-click env setup (WSL / Linux / macOS)
+├── start-server.sh                        # Shell launcher for the inference server
+├── start-tray.sh                          # System-tray GUI launcher
+├── tray.py                                # Tray app (pystray + Pillow)
+├── Makefile                               # Shortcuts for common tasks
+├── pyproject.toml                         # Ruff + Bandit config
+├── requirements.txt                       # Runtime dependencies
+├── requirements-dev.txt                   # Lint / security tools
 ├── data.yaml                              # YOLO dataset config
 ├── configs/train.yaml                     # Training hyperparameters
 ├── train/ valid/                          # Dataset splits (gitignored)
@@ -244,7 +303,7 @@ python src/infer/detect.py match.mp4 --cat-dir ~/my-cats/
     ├── collect/
     │   ├── extract_frames.py              # Extract frames from raw video
     │   ├── split_dataset.py              # Train/val/test splitter
-    │   └── download_logos.py             # Bulk-download brand logos via Bing (icrawler)
+    │   └── download_logos.py             # Bulk-download brand logos via Bing
     ├── train/train.py                     # Training entrypoint
     ├── infer/
     │   ├── detect.py                      # Offline video: cat / blur / box

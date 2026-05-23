@@ -17,6 +17,10 @@ export default [
     },
     rules: {
       "no-console": "warn",
+      // catch (_) is a common intentional-ignore pattern in browser extension code
+      "no-unused-vars": ["error", { caughtErrorsIgnorePattern: "^_" }],
+      // empty catch blocks are acceptable when the intent is explicit (e.g. SecurityError swallow)
+      "no-empty": ["error", { allowEmptyCatch: true }],
       // Array index access via variable is safe here (deterministic cat pool indexing)
       "security/detect-object-injection": "off",
     },
