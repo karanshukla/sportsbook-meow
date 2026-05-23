@@ -2,7 +2,7 @@
 
 Real-time replacement of sportsbook betting ads in sports video — local files and live web streams — with cats. Uses a YOLOv8s model fine-tuned to detect betting logos in broadcast footage.
 
-> **Pre-trained weights** — download `best.pt` from the [latest GitHub Release](../../releases/latest) to skip training entirely.
+**Pre-trained weights** — download `best.pt` from the [latest GitHub Release](../../releases/latest) to skip training entirely.
 
 > **Disclaimer** — For personal use only. Not affiliated with any sportsbook brand. Model weights are learned parameters for the purpose of ad detection and replacement; no third-party brand assets are distributed with this project. This project MAY NOT work with DRM enabled streams (Widevine). This application is only for research, educational or private use. This application does NOT block ads via host file manipulation. Running ML inferencing locally is demanding, so you may run into bugs, lag or freezes depending on your hardware.
 
