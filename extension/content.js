@@ -27,7 +27,7 @@ function loadCats() {
   catsLoaded = true;
   // The extension bundles up to 30 cat images; load whichever exist.
   const attempts = Array.from({ length: 30 }, (_, i) =>
-    chrome.runtime.getURL(`cats/cat_${String(i + 1).padStart(3, "0")}.jpg`)
+    chrome.runtime.getURL(`cats/cat_${String(i + 1).padStart(3, "0")}.jpg`),
   );
   for (const url of attempts) {
     const img = new Image();
@@ -51,7 +51,11 @@ function wsConnect() {
   ws.binaryType = "arraybuffer";
 
   ws.onopen = () => {
-    document.dispatchEvent(new CustomEvent("sbm:status", { detail: "connected" }));
+    document.dispatchEvent(
+      new CustomEvent("sbm:status", { detail: "connected" }),
+    );
+    // Re-scan in case videos loaded while the socket was still connecting
+    scanVideos();
   };
 
   ws.onmessage = (ev) => {
@@ -63,7 +67,9 @@ function wsConnect() {
   };
 
   ws.onclose = () => {
-    document.dispatchEvent(new CustomEvent("sbm:status", { detail: "disconnected" }));
+    document.dispatchEvent(
+      new CustomEvent("sbm:status", { detail: "disconnected" }),
+    );
     pendingCallbacks.forEach((cb) => cb([]));
     pendingCallbacks = [];
     // Retry after 3 s
@@ -178,17 +184,29 @@ class VideoOverlay {
     octx.drawImage(this.video, 0, 0, ow, oh);
 
     this.inflight = true;
-    this.offscreen.toBlob(
-      (blob) => {
-        if (!blob) { this.inflight = false; return; }
-        sendFrame(blob).then((dets) => {
-          this.detections = dets;
-          this.inflight = false;
-        });
-      },
-      "image/jpeg",
-      JPEG_QUALITY
-    );
+    try {
+      this.offscreen.toBlob(
+        (blob) => {
+          if (!blob) {
+            this.inflight = false;
+            return;
+          }
+          sendFrame(blob)
+            .then((dets) => {
+              this.detections = dets;
+              this.inflight = false;
+            })
+            .catch(() => {
+              this.inflight = false;
+            });
+        },
+        "image/jpeg",
+        JPEG_QUALITY,
+      );
+    } catch (_) {
+      // toBlob throws SecurityError when canvas is tainted by cross-origin video
+      this.inflight = false;
+    }
   }
 
   _draw() {
@@ -241,7 +259,8 @@ const mo = new MutationObserver((mutations) => {
   for (const m of mutations) {
     for (const node of m.addedNodes) {
       if (node.nodeName === "VIDEO") attachIfNeeded(node);
-      if (node.querySelectorAll) node.querySelectorAll("video").forEach(attachIfNeeded);
+      if (node.querySelectorAll)
+        node.querySelectorAll("video").forEach(attachIfNeeded);
     }
   }
 });
@@ -255,7 +274,12 @@ chrome.storage.local.get(["enabled", "serverUrl"], (prefs) => {
   loadCats();
   wsConnect();
   scanVideos();
+
+  setInterval(scanVideos, 2000);
 });
+
+// YouTube fires this on SPA navigation (clicking to a new video)
+window.addEventListener("yt-navigate-finish", scanVideos);
 
 // Keep enabled/serverUrl in sync when user changes settings in the popup
 chrome.storage.onChanged.addListener((changes) => {

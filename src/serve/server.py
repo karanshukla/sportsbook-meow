@@ -30,7 +30,8 @@ log = logging.getLogger(__name__)
 # ── globals ──────────────────────────────────────────────────────────────────
 
 _model: YOLO | None = None
-_conf: float = 0.25
+#adjust if youre seeing false positives
+_conf: float = 0.5
 # Thread pool for JPEG decode + YOLO (YOLO releases the GIL for GPU work).
 # One worker per GPU is enough; extra threads handle concurrent decode on the
 # many available CPU cores.
@@ -41,6 +42,7 @@ _frame_times: list[float] = []
 
 
 # ── inference ─────────────────────────────────────────────────────────────────
+
 
 def _infer(jpeg_bytes: bytes) -> list[dict]:
     """Decode JPEG, run YOLO, return normalised boxes. Runs in thread pool."""
@@ -55,17 +57,20 @@ def _infer(jpeg_bytes: bytes) -> list[dict]:
     detections = []
     for box in results.boxes:
         x1, y1, x2, y2 = map(float, box.xyxy[0])
-        detections.append({
-            "x1": x1 / w,
-            "y1": y1 / h,
-            "x2": x2 / w,
-            "y2": y2 / h,
-            "conf": round(float(box.conf[0]), 3),
-        })
+        detections.append(
+            {
+                "x1": x1 / w,
+                "y1": y1 / h,
+                "x2": x2 / w,
+                "y2": y2 / h,
+                "conf": round(float(box.conf[0]), 3),
+            }
+        )
     return detections
 
 
 # ── WebSocket handler ─────────────────────────────────────────────────────────
+
 
 async def _handler(ws):
     addr = ws.remote_address
@@ -104,6 +109,7 @@ async def _handler(ws):
 
 # ── entry point ───────────────────────────────────────────────────────────────
 
+
 async def _serve(host: str, port: int):
     log.info("server ready  ws://%s:%d", host, port)
     async with websockets.serve(_handler, host, port, max_size=10 * 1024 * 1024):
@@ -114,7 +120,7 @@ def main():
     parser = argparse.ArgumentParser(description="sportsbook-meow inference server")
     parser.add_argument(
         "--weights",
-        default="runs/detect/models/sportsbook_ads/weights/best.pt",  # updated by training automatically
+        default="runs/detect/models/sportsbook_ads/weights/best.pt",
         help="Path to trained .pt weights",
     )
     parser.add_argument("--conf", type=float, default=0.25, help="Detection confidence threshold")

@@ -4,6 +4,8 @@ Real-time replacement of sportsbook betting ads in sports video — local files 
 
 > **Pre-trained weights** — download `best.pt` from the [latest GitHub Release](../../releases/latest) to skip training entirely.
 
+> **Disclaimer** — For personal use only. Not affiliated with any sportsbook brand. Model weights are learned parameters for the purpose of ad detection and replacement; no third-party brand assets are distributed with this project. This project MAY NOT work with DRM enabled Streams (Widevine). This application is only for research, educational or private use. This application does NOT block ads via host file manipulation. Running ML inferencing locally is demanding, so you may run into bugs, lag or freezes with your system, depending on your hardware.
+
 ---
 
 ## How it works
@@ -32,7 +34,8 @@ Extension overlays cats on detected regions in real time
 
 | Component | Status |
 |-----------|--------|
-| YOLO model training | ✅ Done — mAP50 0.95 |
+| YOLO model training | ✅ Done — mAP50 0.94+ |
+| Extended brand coverage (Betway, Sportsbet, Canadian) | ✅ Done — fine-tuned on expanded dataset |
 | Offline video processing (cat replace / blur / box) | ✅ Done |
 | Cat image downloader (real photos, no AI) | ✅ Done |
 | Local WebSocket inference server | ✅ Done |
@@ -133,9 +136,11 @@ python src/serve/server.py
 
 Click the 🐱 icon in your toolbar — the popup shows the server connection status and an on/off toggle.
 
+> **Chrome permission prompt** — the first time the extension tries to connect, Chrome will show a banner asking permission to access `localhost`. Click **Allow**. You only need to do this once. If you miss it, go to `chrome://extensions` → sportsbook-meow → **Site access** and allow localhost manually.
+
 ### 5. Watch sport, enjoy cats
 
-Open any stream on YouTube, Twitch, DAZN, ESPN+, etc. Betting logos are replaced with random cats in real time.
+Open any stream on YouTube, Twitch etc. Betting logos are replaced with random cats in real time.
 
 ---
 
@@ -143,9 +148,13 @@ Open any stream on YouTube, Twitch, DAZN, ESPN+, etc. Betting logos are replaced
 
 ### 1. Get the dataset
 
+Annotate your own frames using [LabelImg](https://github.com/HumanSignal/labelImg) or [Roboflow](https://roboflow.com) in YOLO format, one class: `logo`. Place images in `train/images/` and labels in `train/labels/`, then create a `valid/` split the same way.
+
+To download a Roboflow dataset export (YOLOv8 format) and split it:
+
 ```bash
 conda activate yolo
-curl -sL "https://app.roboflow.com/ds/8lIkumsonX?key=ndbNI8XTta" -o roboflow.zip
+curl -sL "https://app.roboflow.com/ds/YOURKEY" -o roboflow.zip
 python - <<'EOF'
 import zipfile, random, shutil
 from pathlib import Path
@@ -166,8 +175,6 @@ print(f"Train: {len(list(Path('train/images').glob('*.jpg')))}  Val: {len(list(P
 EOF
 ```
 
-Dataset source: [logo-betting on Roboflow Universe](https://universe.roboflow.com/hau-trinh/logo-betting) — 2271 images, 1 class (`logo`).
-
 ### 2. Train
 
 ```bash
@@ -176,6 +183,8 @@ python src/train/train.py --config configs/train.yaml
 ```
 
 Weights are saved to `runs/detect/models/sportsbook_ads/weights/best.pt`. Training 100 epochs on an RTX 5070 takes roughly 2–3 hours.
+
+> **Fresh clone:** `configs/train.yaml` defaults to fine-tuning from `best.pt`. For a first run from scratch, either download `best.pt` from the [latest release](../../releases/latest) or change `model:` in `configs/train.yaml` to `yolov8s.pt`.
 
 To resume an interrupted run:
 ```bash
@@ -187,7 +196,7 @@ python src/train/train.py --config configs/train.yaml --resume
 ```bash
 gh release create v1.0 runs/detect/models/sportsbook_ads/weights/best.pt \
   --title "sportsbook-meow v1.0" \
-  --notes "YOLOv8s, mAP50=0.95, trained on logo-betting dataset"
+  --notes "YOLOv8s fine-tuned for sportsbook logo detection in broadcast video"
 ```
 
 ---
@@ -234,7 +243,8 @@ python src/infer/detect.py match.mp4 --cat-dir ~/my-cats/
 └── src/
     ├── collect/
     │   ├── extract_frames.py              # Extract frames from raw video
-    │   └── split_dataset.py              # Train/val/test splitter
+    │   ├── split_dataset.py              # Train/val/test splitter
+    │   └── download_logos.py             # Bulk-download brand logos via Bing (icrawler)
     ├── train/train.py                     # Training entrypoint
     ├── infer/
     │   ├── detect.py                      # Offline video: cat / blur / box

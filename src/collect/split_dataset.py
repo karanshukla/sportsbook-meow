@@ -1,4 +1,5 @@
 """Split annotated images into train/val/test sets."""
+
 import argparse
 import random
 import shutil

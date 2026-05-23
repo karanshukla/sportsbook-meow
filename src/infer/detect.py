@@ -1,4 +1,5 @@
 """Detect sportsbook ads in video/images. Supports box, blur, or cat-replace modes."""
+
 import argparse
 import random
 from pathlib import Path
@@ -26,9 +27,9 @@ def _load_cat_pool(cat_dir: str) -> list[np.ndarray]:
         img = cv2.imread(str(f), cv2.IMREAD_UNCHANGED)
         if img is None:
             continue
-        if img.ndim == 2:                        # grayscale → BGR
+        if img.ndim == 2:  # grayscale → BGR
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-        elif img.shape[2] == 4:                  # BGRA → BGR
+        elif img.shape[2] == 4:  # BGRA → BGR
             img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
         _CAT_POOL.append(img)
 
@@ -58,7 +59,15 @@ def _apply_blur(frame: np.ndarray, boxes, strength: int = 51) -> np.ndarray:
     return frame
 
 
-def process_video(model: YOLO, source: str, output: str, conf: float, mode: str, cat_dir: str, preview: bool = False) -> None:
+def process_video(
+    model: YOLO,
+    source: str,
+    output: str,
+    conf: float,
+    mode: str,
+    cat_dir: str,
+    preview: bool = False,
+) -> None:
     cap = cv2.VideoCapture(source)
     w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -117,7 +126,9 @@ def main():
         default=str(Path(__file__).parent / "cats"),
         help="Directory of cat images to randomly pick from in cat mode",
     )
-    parser.add_argument("--preview", action="store_true", help="Show live preview window (press Q to quit)")
+    parser.add_argument(
+        "--preview", action="store_true", help="Show live preview window (press Q to quit)"
+    )
     args = parser.parse_args()
     model = YOLO(args.weights)
     process_video(model, args.source, args.output, args.conf, args.mode, args.cat_dir, args.preview)

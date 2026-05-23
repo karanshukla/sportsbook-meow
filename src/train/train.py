@@ -1,4 +1,5 @@
 """Train YOLO model on sportsbook ad dataset."""
+
 import argparse
 from pathlib import Path
 
@@ -19,7 +20,10 @@ def train(config: str, resume: bool = False, weights: str | None = None) -> None
     else:
         model.train(**cfg)
 
-    print(f"Training complete. Best weights: {Path(cfg.get('project', 'models')) / cfg.get('name', 'train') / 'weights/best.pt'}")
+    print(
+        f"Training complete. Best weights: "
+        f"{Path(cfg.get('project', 'models')) / cfg.get('name', 'train') / 'weights/best.pt'}"
+    )
 
 
 def main():

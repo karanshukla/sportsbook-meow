@@ -1,7 +1,9 @@
 """Extract frames from video files for annotation."""
+
 import argparse
-import cv2
 from pathlib import Path
+
+import cv2
 
 
 def extract_frames(video_path: str, output_dir: str, fps: int = 1) -> int:
@@ -39,7 +41,11 @@ def main():
 
     input_path = Path(args.video)
     if input_path.is_dir():
-        videos = list(input_path.glob("*.mp4")) + list(input_path.glob("*.avi")) + list(input_path.glob("*.mkv"))
+        videos = (
+            list(input_path.glob("*.mp4"))
+            + list(input_path.glob("*.avi"))
+            + list(input_path.glob("*.mkv"))
+        )
         for v in videos:
             extract_frames(str(v), args.output, args.fps)
     else:

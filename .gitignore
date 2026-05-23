@@ -181,9 +181,17 @@ cython_debug/
 .cursorindexingignore
 
 # Dataset & media (large files — use DVC or external storage)
-data/raw/
-data/frames/
-data/dataset/
+data/
+data/raw_logos/
+data/annotations/
+
+# Catch-all: block any image/video accidentally placed anywhere under data/
+data/**/*.jpg
+data/**/*.jpeg
+data/**/*.png
+data/**/*.webp
+data/**/*.bmp
+data/**/*.tiff
 
 # Model weights & YOLO output
 models/
@@ -209,6 +217,13 @@ Miniconda3-*.sh
 # Cat image pools (downloaded/generated at runtime)
 src/infer/cats/
 extension/cats/
+
+# Node / ESLint
+node_modules/
+package-lock.json
+
+# Logs
+*.log
 
 # Output videos
 output*.mp4

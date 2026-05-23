@@ -1,0 +1,26 @@
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["data/", "models/", "runs/"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "C4",  # flake8-comprehensions
+    "RUF", # ruff-specific rules
+]
+
+[tool.ruff.lint.per-file-ignores]
+# argparse scripts use a lot of positional args in long call chains
+"src/train/train.py" = ["B008"]
+
+[tool.bandit]
+exclude_dirs = ["data", "models", "runs"]
+skips = [
+    "B311",  # random used for non-cryptographic purposes (cat image selection)
+]

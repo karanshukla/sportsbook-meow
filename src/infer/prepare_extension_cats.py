@@ -2,11 +2,10 @@
 Resize cat images from src/infer/cats/ and copy them to extension/cats/.
 
 Run this after download_cats.py to bundle cats with the browser extension.
-Images are resized to at most 300×300 px to keep the extension package small.
+Images are resized to at most 300x300 px to keep the extension package small.
 """
 
 import argparse
-import shutil
 from pathlib import Path
 
 import cv2

@@ -1,4 +1,5 @@
 """Download real (non-AI) cat photos from The Cat API."""
+
 import argparse
 import json
 import urllib.request
